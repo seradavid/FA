@@ -1,0 +1,6 @@
+FillingFactor,AvgEffortFound,MaxEffortFound,AvgEffortNotFound,MaxEffortNotFound
+0.8,1.20067,51,9.468,57
+0.85,1.88267,63,16.0767,75
+0.9,2.37867,78,24.8973,91
+0.95,3.72608,98,40.5945,193
+0.99,5.13333,239,106.743,745
