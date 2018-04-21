@@ -259,7 +259,7 @@ void Tree<t>::remove(const t& value)
 	delete node;
 	if (original == BLACK)
 	{
-		fixRemove(y);
+		fixRemove(x);
 	}
 }
 
@@ -268,7 +268,7 @@ void Tree<t>::fixRemove(Node<t> *x)
 {
 	bool side;
 	Node<t> *sibling;
-	while (x != root && x->colour == BLACK)
+	while (x && x != root && x->colour == BLACK)
 	{
 		if ((side = (x == x->parent->left)))
 		{
@@ -327,7 +327,10 @@ void Tree<t>::fixRemove(Node<t> *x)
 			x = root;
 		}
 	}
-	x->colour = BLACK;
+	if (x)
+	{
+		x->colour = BLACK;
+	}
 }
 
 template<class t>
