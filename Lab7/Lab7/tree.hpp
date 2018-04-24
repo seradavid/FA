@@ -16,6 +16,8 @@ public:
 
 	void remove(const t&);
 
+	Node<t> *select(const int&);
+
 	void print();
 
 protected:
@@ -28,6 +30,8 @@ protected:
 	void fixRemove(Node<t> *);
 
 	void transplant(Node<t> *, Node<t> *);
+
+	void updateSize(Node<t> *);
 
 	Node<t>* minimum(Node<t> *);
 
@@ -76,6 +80,8 @@ void Tree<t>::rotateLeft(Node<t> *x)
 		x->parent->right = y;
 	}
 	x->parent = y;
+
+	updateSize(x);
 }
 
 template<class t>
@@ -105,8 +111,9 @@ void Tree<t>::rotateRight(Node<t> *y)
 	{
 		y->parent->right = x;
 	}
-
 	y->parent = x;
+
+	updateSize(y);
 }
 
 template<class t>
@@ -118,6 +125,7 @@ void Tree<t>::insert(const t& value)
 	node = root;
 	while (node)
 	{
+		node->size++;
 		parent = node;
 		if (value < node->value)
 		{
@@ -131,18 +139,13 @@ void Tree<t>::insert(const t& value)
 
 	if (!parent)
 	{
-		z = root = new Node<t>;
-		z->value = value;
+		z = root = new Node<t>(value);
 		z->colour = BLACK;
-		z->parent = z->left = z->right = nullptr;
 	}
 	else
 	{
-		z = new Node<t>;
-		z->value = value;
-		z->colour = RED;
+		z = new Node<t>(value);
 		z->parent = parent;
-		z->left = z->right = nullptr;
 
 		if (z->value < parent->value)
 		{
@@ -247,11 +250,17 @@ void Tree<t>::remove(const t& value)
 		{
 			transplant(y, y->right);
 			y->right = node->right;
+
+			updateSize(y);
+
 			y->right->parent = y;
 		}
 
 		transplant(node, y);
 		y->left = node->left;
+
+		updateSize(y);
+
 		y->left->parent = y;
 		y->colour = node->colour;
 	}
@@ -353,6 +362,8 @@ void Tree<t>::transplant(Node<t> *dest, Node<t> *src)
 	{
 		src->parent = dest->parent;
 	}
+
+	updateSize(dest->parent);
 }
 
 template<class t>
@@ -364,6 +375,42 @@ Node<t> *Tree<t>::minimum(Node<t> *node)
 	}
 
 	return node;
+}
+
+template<class t>
+Node<t> *Tree<t>::select(const int& index)
+{
+	if (index > root->size)
+	{
+		return nullptr;
+	}
+
+	Node<t> *n = root;
+	int value = index;
+	int r;
+
+	while (n)
+	{
+		r = 1;
+		if (n->left)
+		{
+			r += n->left->size;
+		}
+
+		if (value == r)
+		{
+			return n;
+		}
+		else if (value < r)
+		{
+			n = n->left;
+		}
+		else
+		{
+			n = n->right;
+			value -= r;
+		}
+	}
 }
 
 template<class t>
@@ -401,7 +448,7 @@ void Tree<t>::print(Node<t> *node, int tabs)
 	{
 		std::cout << "\t";
 	}
-	std::cout << node->value << (node->colour ? "B" : "R") << std::endl;
+	std::cout << node->value << (node->colour ? "B" : "R") << node->size << std::endl;
 
 	print(node->right, tabs + 1);
 }
@@ -410,4 +457,28 @@ template<class t>
 void Tree<t>::print()
 {
 	print(root, 0);
+}
+
+template<class t>
+void Tree<t>::updateSize(Node<t> *node)
+{
+	if (node)
+	{
+		node->size = 1;
+		if (node->left)
+		{
+			node->size += node->left->size;
+		}
+		if (node->right)
+		{
+			node->size += node->right->size;
+		}
+		if (node->parent)
+		{
+			if (node->parent->size != (node->parent->left ? node->parent->left->size : 0) + (node->parent->right ? node->parent->right->size : 0) + 1)
+			{
+				updateSize(node->parent);
+			}
+		}
+	}
 }
