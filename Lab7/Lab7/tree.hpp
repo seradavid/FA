@@ -6,6 +6,7 @@ class Tree
 {
 private:
 	Node<t> *root;
+	int nrOp;
 
 public:
 	Tree();
@@ -20,7 +21,11 @@ public:
 
 	void print();
 
-protected:
+	bool isEmpty();
+
+	int getNrOp();
+
+private:
 	void rotateLeft(Node<t> *);
 
 	void rotateRight(Node<t> *);
@@ -44,6 +49,7 @@ template<class t>
 Tree<t>::Tree()
 	:root(nullptr)
 {
+	nrOp = 0;
 }
 
 template<class t>
@@ -58,28 +64,40 @@ void Tree<t>::rotateLeft(Node<t> *x)
 	Node<t> *y;
 
 	y = x->right;
+	if (!y)
+	{
+		return;
+	}
 	x->right = y->left;
+	nrOp += 2;
+
 	if (y->left)
 	{
 		y->left->parent = x;
+		nrOp++;
 	}
 
 	y->parent = x->parent;
 	y->left = x;
+	nrOp += 2;
 
 	if (!x->parent)
 	{
 		root = y;
+		nrOp++;
 	}
 	else if (x == x->parent->left)
 	{
 		x->parent->left = y;
+		nrOp += 2;
 	}
 	else
 	{
 		x->parent->right = y;
+		nrOp++;
 	}
 	x->parent = y;
+	nrOp++;
 
 	updateSize(x);
 }
@@ -90,28 +108,40 @@ void Tree<t>::rotateRight(Node<t> *y)
 	Node<t> *x;
 
 	x = y->left;
+	if (!x)
+	{
+		return;
+	}
 	y->left = x->right;
+	nrOp += 2;
+
 	if (x->right)
 	{
 		x->right->parent = y;
+		nrOp++;
 	}
 
 	x->parent = y->parent;
 	x->right = y;
+	nrOp += 2;
 
 	if (!y->parent)
 	{
 		root = x;
+		nrOp++;
 	}
 	else if (y == y->parent->left)
 	{
 		y->parent->left = x;
+		nrOp += 2;
 	}
 	else
 	{
 		y->parent->right = x;
+		nrOp++;
 	}
 	y->parent = x;
+	nrOp++;
 
 	updateSize(y);
 }
@@ -150,11 +180,13 @@ void Tree<t>::insert(const t& value)
 		if (z->value < parent->value)
 		{
 			parent->left = z;
+
 		}
 		else
 		{
 			parent->right = z;
 		}
+		nrOp += 3;
 	}
 
 	fixInsert(z);
@@ -167,6 +199,7 @@ void Tree<t>::fixInsert(Node<t> *z)
 	bool side;
 	while (z->parent && z->parent->colour == RED)
 	{
+		nrOp++;
 		if ((side = (z->parent == z->parent->parent->left)))
 		{
 			uncle = z->parent->parent->right;
@@ -175,6 +208,7 @@ void Tree<t>::fixInsert(Node<t> *z)
 		{
 			uncle = z->parent->parent->left;
 		}
+		nrOp++;
 
 		if (uncle && uncle->colour == RED)
 		{
@@ -182,6 +216,7 @@ void Tree<t>::fixInsert(Node<t> *z)
 			uncle->colour = BLACK;
 			z->parent->parent->colour = RED;
 			z = z->parent->parent;
+			nrOp += 2;
 		}
 		else
 		{
@@ -189,6 +224,7 @@ void Tree<t>::fixInsert(Node<t> *z)
 			{
 				z = z->parent;
 				side ? rotateLeft(z) : rotateRight(z);
+				nrOp += 2;
 			}
 
 			z->parent->colour = BLACK;
@@ -206,6 +242,7 @@ void Tree<t>::remove(const t& value)
 	Node<t> *node = root;
 	while (node)
 	{
+		node->size--;
 		if (value < node->value)
 		{
 			node = node->left;
@@ -216,6 +253,7 @@ void Tree<t>::remove(const t& value)
 		}
 		else
 		{
+			node->size++;
 			break;
 		}
 	}
@@ -231,37 +269,53 @@ void Tree<t>::remove(const t& value)
 	if (!node->left)
 	{
 		transplant(node, x = node->right);
+		nrOp++;
 	}
 	else if (!node->right)
 	{
 		transplant(node, x = node->left);
+		nrOp += 2;
 	}
 	else
 	{
+		nrOp += 2;
 		y = minimum(node->right);
 		original = y->colour;
 		x = y->right;
+		nrOp++;
 
-		if (y->parent == node)
+		if (y->parent == node && x)
 		{
 			x->parent = y;
+			nrOp += 2;
 		}
 		else
 		{
+			nrOp++;
 			transplant(y, y->right);
 			y->right = node->right;
+			nrOp++;
 
 			updateSize(y);
 
-			y->right->parent = y;
+			if (y->right)
+			{
+				y->right->parent = y;
+				nrOp++;
+			}
 		}
 
 		transplant(node, y);
 		y->left = node->left;
+		nrOp++;
 
 		updateSize(y);
 
-		y->left->parent = y;
+		if (y->left)
+		{
+			y->left->parent = y;
+			nrOp++;
+		}
 		y->colour = node->colour;
 	}
 
@@ -279,6 +333,7 @@ void Tree<t>::fixRemove(Node<t> *x)
 	Node<t> *sibling;
 	while (x && x != root && x->colour == BLACK)
 	{
+		nrOp++;
 		if ((side = (x == x->parent->left)))
 		{
 			sibling = x->parent->right;
@@ -287,49 +342,73 @@ void Tree<t>::fixRemove(Node<t> *x)
 		{
 			sibling = x->parent->left;
 		}
+		nrOp++;
 
-		if (sibling->colour == RED)
+		if (sibling && sibling->colour == RED)
 		{
 			sibling->colour = BLACK;
 			x->parent->colour = RED;
 			side ? rotateLeft(x->parent) : rotateRight(x->parent);
 			sibling = side ? x->parent->right : x->parent->left;
+			//nrOp++;
 		}
 
-		if (sibling->left->colour == BLACK && sibling->right->colour == BLACK)
+		if (sibling && sibling->left && sibling->left->colour == BLACK && sibling->right && sibling->right->colour == BLACK)
 		{
 			sibling->colour = RED;
 			x = x->parent;
+			nrOp += 2;
 		}
 		else
 		{
-			if (BLACK == side ? sibling->right->colour : sibling->left->colour)
+			nrOp += 2;
+			if (sibling && (side ? sibling->right : sibling->left))
 			{
-				sibling->colour = RED;
-				if (side)
+				if (BLACK == side ? sibling->right->colour : sibling->left->colour)
 				{
-					sibling->left->colour = BLACK;
-					rotateRight(sibling);
-					sibling = x->parent->right;
-				}
-				else
-				{
-					sibling->right->colour = BLACK;
-					rotateLeft(sibling);
-					sibling = x->parent->left;
+					sibling->colour = RED;
+					if (side)
+					{
+						if (sibling->left)
+						{
+							sibling->left->colour = BLACK;
+						}
+						rotateRight(sibling);
+						sibling = x->parent->right;
+						nrOp++;
+					}
+					else
+					{
+						if (sibling->right)
+						{
+							sibling->right->colour = BLACK;
+						}
+						rotateLeft(sibling);
+						sibling = x->parent->left;
+						nrOp++;
+					}
 				}
 			}
 
-			sibling->colour = x->parent->colour;
+			if (sibling)
+			{
+				sibling->colour = x->parent->colour;
+			}
 			x->parent->colour = BLACK;
 			if (side)
 			{
-				sibling->right->colour = BLACK;
+				if (sibling && sibling->right)
+				{
+					sibling->right->colour = BLACK;
+				}
 				rotateLeft(x->parent);
 			}
 			else
 			{
-				sibling->left->colour = BLACK;
+				if (sibling && sibling->left)
+				{
+					sibling->left->colour = BLACK;
+				}
 				rotateRight(x->parent);
 			}
 
@@ -348,19 +427,23 @@ void Tree<t>::transplant(Node<t> *dest, Node<t> *src)
 	if (!dest->parent)
 	{
 		root = src;
+		nrOp += 2;
 	}
 	else if (dest == dest->parent->left)
 	{
 		dest->parent->left = src;
+		nrOp += 3;
 	}
 	else
 	{
 		dest->parent->right = src;
+		nrOp += 3;
 	}
 
 	if (src)
 	{
 		src->parent = dest->parent;
+		nrOp++;
 	}
 
 	updateSize(dest->parent);
@@ -411,6 +494,8 @@ Node<t> *Tree<t>::select(const int& index)
 			value -= r;
 		}
 	}
+
+	return n;
 }
 
 template<class t>
@@ -481,4 +566,16 @@ void Tree<t>::updateSize(Node<t> *node)
 			}
 		}
 	}
+}
+
+template<class t>
+bool Tree<t>::isEmpty()
+{
+	return (root == nullptr);
+}
+
+template<class t>
+int Tree<t>::getNrOp()
+{
+	return nrOp;
 }
